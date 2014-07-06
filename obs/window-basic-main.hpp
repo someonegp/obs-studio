@@ -61,6 +61,9 @@ private:
 
 	QNetworkAccessManager networkManager;
 
+	QPointer<QTimer>    cpuUsageTimer;
+	os_cpu_usage_info_t cpuUsageInfo = nullptr;
+
 	QBuffer       logUploadPostData;
 	QNetworkReply *logUploadReply = nullptr;
 	QByteArray    logUploadReturnData;
@@ -197,6 +200,11 @@ public:
 		y  = previewY;
 		cx = previewCX;
 		cy = previewCY;
+	}
+
+	inline double GetCPUUsage() const
+	{
+		return os_cpu_usage_info_query(cpuUsageInfo);
 	}
 
 protected:

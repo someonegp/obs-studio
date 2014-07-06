@@ -88,6 +88,12 @@ OBSBasic::OBSBasic(QWidget *parent)
 			this,
 			SLOT(SceneItemNameEdited(QWidget*,
 					QAbstractItemDelegate::EndEditHint)));
+
+	cpuUsageInfo = os_cpu_usage_info_start();
+	cpuUsageTimer = new QTimer(this);
+	connect(cpuUsageTimer, SIGNAL(timeout()),
+			ui->statusbar, SLOT(UpdateCPUUsage()));
+	cpuUsageTimer->start(3000);
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t parent)
@@ -550,10 +556,11 @@ OBSBasic::~OBSBasic()
 	 * can be freed, and we have no control over the destruction order of
 	 * the Qt UI stuff, so we have to manually clear any references to
 	 * libobs. */
-	if (properties)
-		delete properties;
-	if (transformWindow)
-		delete transformWindow;
+	delete cpuUsageTimer;
+	os_cpu_usage_info_destroy(cpuUsageInfo);
+
+	delete properties;
+	delete transformWindow;
 
 	ClearVolumeControls();
 	ui->sources->clear();
@@ -1680,6 +1687,7 @@ void OBSBasic::StreamingStart()
 {
 	ui->streamButton->setText("Stop Streaming");
 	ui->streamButton->setEnabled(true);
+	ui->statusbar->StreamStarted(streamOutput);
 }
 
 void OBSBasic::StreamingStop(int code)
@@ -1711,6 +1719,7 @@ void OBSBasic::StreamingStop(int code)
 	}
 
 	activeRefs--;
+	ui->statusbar->StreamStopped();
 
 	ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
 	ui->streamButton->setEnabled(true);
